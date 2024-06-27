@@ -23,6 +23,9 @@ const scene = new THREE.Scene()
 // )
 // scene.add(cube)
 
+const textureLoader = new THREE.TextureLoader()
+const particlesTexture = textureLoader.load('/textures/particles/1.png')
+
 // Galaxy
 const galaxyParams = {
   count: 100000,
@@ -30,10 +33,15 @@ const galaxyParams = {
   radius: 5.5,
   branches: 4,
   spin: 1,
-  randomness: 0.02,
-  randomnessPower: 3,
-  insideColour: '#ff6030',
-  outsideColour: '#1b3984',
+  randomness: 0.402,
+  randomnessPower: 1.924,
+  insideColour: '#498efd',
+  outsideColour: '#142348',
+  // randomness: 0.02,
+  // randomnessPower: 3,
+  // insideColour: '#ff6030',
+  // outsideColour: '#1b3984',
+
   zoom: 1, // Initial zoom level
   yOffset: 5, // Initial vertical offset
 }
@@ -96,6 +104,9 @@ const generateGalaxy = () => {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexColors: true,
+    map: particlesTexture,
+    alphaMap: particlesTexture,
+    depthWrite: false,
   })
 
   points = new THREE.Points(geometry, material)
@@ -166,6 +177,16 @@ const clock = new THREE.Clock()
 document.addEventListener('wheel', (event) => {
   galaxyParams.zoom += event.deltaY * 0.001 // Adjust the zoom sensitivity
   galaxyParams.zoom = Math.max(0.1, Math.min(5, galaxyParams.zoom)) // Clamp the zoom level
+
+  // Update the camera's distance based on the zoom level
+  const radius = galaxyParams.radius * galaxyParams.zoom
+  controls.target.set(0, 0, 0) // Ensure the target is at the origin (or your object's position)
+  camera.position.set(
+    Math.cos(controls.getAzimuthalAngle()) * radius,
+    galaxyParams.yOffset * galaxyParams.zoom, // Maintain the relative y offset
+    Math.sin(controls.getAzimuthalAngle()) * radius
+  )
+  controls.update()
 })
 
 const tick = () => {
@@ -177,8 +198,8 @@ const tick = () => {
   camera.position.z = Math.sin(elapsedTime / 5) * radius
   camera.position.y = galaxyParams.yOffset * galaxyParams.zoom // Maintain the relative y offset
 
+  controls.target.set(0, 0, 0) // Ensure the target is at the origin (or your object's position)
   controls.update()
-  controls.enabled = true
 
   // camera.position.y = galaxyParams.yPosition // Maintain the initial y position
 
