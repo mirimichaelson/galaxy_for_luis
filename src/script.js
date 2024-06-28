@@ -23,17 +23,27 @@ const scene = new THREE.Scene()
 // )
 // scene.add(cube)
 
+const textureLoader = new THREE.TextureLoader()
+const particlesTexture = textureLoader.load('/textures/particles/1.png')
+
 // Galaxy
 const galaxyParams = {
   count: 100000,
   size: 0.01,
-  radius: 5,
+  radius: 5.5,
   branches: 4,
   spin: 1,
-  randomness: 0.02,
-  randomnessPower: 3,
-  insideColour: '#ff6030',
-  outsideColour: '#1b3984',
+  randomness: 0.402,
+  randomnessPower: 1.924,
+  insideColour: '#498efd',
+  outsideColour: '#142348',
+  // randomness: 0.02,
+  // randomnessPower: 3,
+  // insideColour: '#ff6030',
+  // outsideColour: '#1b3984',
+
+  zoom: 1, // Initial zoom level
+  yOffset: 5, // Initial vertical offset
 }
 
 let geometry = null
@@ -94,6 +104,9 @@ const generateGalaxy = () => {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexColors: true,
+    map: particlesTexture,
+    alphaMap: particlesTexture,
+    depthWrite: false,
   })
 
   points = new THREE.Points(geometry, material)
@@ -138,9 +151,9 @@ window.addEventListener('resize', () => {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 3
+camera.position.x = 7
 camera.position.y = 3
-camera.position.z = 3
+camera.position.z = 2
 scene.add(camera)
 
 // Controls
@@ -161,11 +174,39 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const clock = new THREE.Clock()
 
-const tick = () => {
-  const elapsedTime = clock.getElapsedTime()
+document.addEventListener('wheel', (event) => {
+  galaxyParams.zoom += event.deltaY * 0.001 // Adjust the zoom sensitivity
+  galaxyParams.zoom = Math.max(0.1, Math.min(5, galaxyParams.zoom)) // Clamp the zoom level
 
-  // Update controls
+  // Update the camera's distance based on the zoom level
+  const radius = galaxyParams.radius * galaxyParams.zoom
+  controls.target.set(0, 0, 0) // Ensure the target is at the origin (or your object's position)
+  camera.position.set(
+    Math.cos(controls.getAzimuthalAngle()) * radius,
+    galaxyParams.yOffset * galaxyParams.zoom, // Maintain the relative y offset
+    Math.sin(controls.getAzimuthalAngle()) * radius
+  )
   controls.update()
+})
+
+const tick = () => {
+  const radius = galaxyParams.radius * galaxyParams.zoom
+
+  const elapsedTime = clock.getElapsedTime()
+  controls.enabled = false
+  camera.position.x = Math.cos(elapsedTime / 5) * radius
+  camera.position.z = Math.sin(elapsedTime / 5) * radius
+  camera.position.y = galaxyParams.yOffset * galaxyParams.zoom // Maintain the relative y offset
+
+  controls.target.set(0, 0, 0) // Ensure the target is at the origin (or your object's position)
+  controls.update()
+
+  // camera.position.y = galaxyParams.yPosition // Maintain the initial y position
+
+  // camera.position.x = Math.cos(elapsedTime) * galaxyParams.radius
+  // camera.position.z = Math.sin(elapsedTime) * galaxyParams.radius
+  // camera.position.y = (Math.sin(elapsedTime * 0.5) * galaxyParams.radius) / 2 // Optional: to add a vertical oscillation effect
+  camera.lookAt(new THREE.Vector3(0, 0, 0))
 
   // Render
   renderer.render(scene, camera)
