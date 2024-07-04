@@ -160,6 +160,14 @@ scene.add(camera)
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
+let isRotationPaused = false;
+// Add an event listener for the 'keydown' event
+document.addEventListener('keydown', (event) => {
+  if (event.code === 'Space') {
+    isRotationPaused = !isRotationPaused;
+  }
+});
+
 /**
  * Renderer
  */
@@ -189,14 +197,32 @@ document.addEventListener('wheel', (event) => {
   controls.update()
 })
 
+let runningTime = 0;
+let rotationSpeed = 0.2;
+
+const accelerate = (currentSpeed, targetSpeed) => {
+  const deltaSpeed = targetSpeed - currentSpeed;
+
+  if (Math.abs(deltaSpeed) < 0.0001) {
+    return targetSpeed;
+  } else {
+    return currentSpeed + deltaSpeed / 10;
+  }
+}
+
 const tick = () => {
+  const delta = clock.getDelta();
+
   const radius = galaxyParams.radius * galaxyParams.zoom
 
-  const elapsedTime = clock.getElapsedTime()
   controls.enabled = false
-  camera.position.x = Math.cos(elapsedTime / 5) * radius
-  camera.position.z = Math.sin(elapsedTime / 5) * radius
-  camera.position.y = galaxyParams.yOffset * galaxyParams.zoom // Maintain the relative y offset
+
+  // Always update the camera position
+  rotationSpeed = accelerate(rotationSpeed, isRotationPaused ? 0 : 0.2);
+  runningTime += delta * rotationSpeed;
+  camera.position.x = Math.cos(runningTime) * radius;
+  camera.position.z = Math.sin(runningTime) * radius;
+  camera.position.y = galaxyParams.yOffset * galaxyParams.zoom;
 
   controls.target.set(0, 0, 0) // Ensure the target is at the origin (or your object's position)
   controls.update()
